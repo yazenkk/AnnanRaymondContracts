@@ -2,9 +2,9 @@
 *heterogeneity*
 
 clear all
-log using "/Users/fannan/Dropbox/research_Chiman_Francis/contracts-w Collin/_paper/results/treatmenteffects_heterogeneity_draft.log", replace
+log using "${main_loc}/_paper/results/treatmenteffects_heterogeneity_draft.log", replace
 *bring in data_treatmenteffects_main (from main analysis?)
-use "/Users/fannan/Dropbox/research_Chiman_Francis/contracts-w Collin/_paper/intermediate_data/data_treatmenteffects_main.dta", clear
+use "${main_loc}/_paper/intermediate_data/data_treatmenteffects_main.dta", clear
 tab week
 
 ***get heterogneity var set***

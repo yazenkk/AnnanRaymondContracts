@@ -14,9 +14,9 @@
 
 *(B) results - managerial predictability and drivers*
 clear all
-log using "/Users/fannan/Dropbox/research_Chiman_Francis/contracts-w Collin/_paper/results/managerial_predictability_draft.log", replace
+log using "${main_loc}/_paper/results/managerial_predictability_draft.log", replace
 *start w/ baseline survey - managers
-use "/Users/fannan/Dropbox/research_Chiman_Francis/contracts-w Collin/survey_data_management/Field data/Manager/Manager.dta", clear //n=456
+use "${main_loc}/survey_data_management/Field data/Manager/Manager.dta", clear //n=456
 gen rct_sample = (s1_1a==1 | s1_1a==2 | s1_1a==3 | s1_1a==9 | s1_1a==5 | s1_1a==6 | s1_1a==7 | s1_1a==14 | s1_1a==15) // 9 regions, n=378
 tab rct_sample
 *keep if rct_sample==1
@@ -168,11 +168,11 @@ restore
 *but +43 new mangers @endline*
 preserve
 *endline, refined?
-use "/Users/fannan/Dropbox/research_Chiman_Francis/contracts-w Collin/survey_data_management/Endline Rolling Data/Manager_0110.dta", clear 
+use "${main_loc}/survey_data_management/Endline Rolling Data/Manager_0110.dta", clear 
 bys s1_6a s1_6b s1_1a s1_1b s1_1c  s1_1cii : gen cliff=_N 
 tab cliff
 keep if cliff==1
-saveold "/Users/fannan/Dropbox/research_Chiman_Francis/contracts-w Collin/survey_data_management/Endline Rolling Data/Manager_0110_279baselineONLY.dta", replace
+saveold "${main_loc}/survey_data_management/Endline Rolling Data/Manager_0110_279baselineONLY.dta", replace
 restore
 
 
@@ -180,7 +180,7 @@ bys s1_6a s1_6b s1_1a s1_1b s1_1c  s1_1cii : gen cliff=_n
 tab cliff
 drop if cliff==2
 *merging w/ n=279
-merge 1:1 s1_6a s1_6b s1_1a s1_1b s1_1c  s1_1cii using "/Users/fannan/Dropbox/research_Chiman_Francis/contracts-w Collin/survey_data_management/Endline Rolling Data/Manager_0110_279baselineONLY.dta" 
+merge 1:1 s1_6a s1_6b s1_1a s1_1b s1_1c  s1_1cii using "${main_loc}/survey_data_management/Endline Rolling Data/Manager_0110_279baselineONLY.dta" 
 
 *reverse dropout rank positions: dropout_rank1 = rrank5, ..., dropout_rank5 = rrank1*
 forvalues i = 1/5 {
@@ -222,7 +222,7 @@ gen dontunderstand=(QN6==2) if !missing(QN6)
 eststo Understand: mean understand
 eststo Dont: mean dontunderstand
 coefplot Understand Dont, vertical xlabel("") xtitle("") ytitle("Fraction: Managers" " ", size(medium)) title("Managers - Understand Different Contracts at Endline") recast(bar) barwidth(0.90) fcolor(*.5) ciopts(recast(rcap)) citop citype(normal) level(95) graphregion(color(white)) ylab(, nogrid) legend(pos(4) col(1) region(col(white)) size(small)) ylab(, nogrid)
-gr export "/Users/fannan/Dropbox/research_Chiman_Francis/contracts-w Collin/_paper/results/figures/managers_understand_differentcontracts_endl.eps", replace
+gr export "${main_loc}/_paper/results/figures/managers_understand_differentcontracts_endl.eps", replace
 
 
 /*

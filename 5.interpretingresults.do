@@ -15,22 +15,20 @@
 
 *(A) results - drivers of performance differences*
 clear all
-log using "/Users/fannan/Dropbox/research_Chiman_Francis/contracts-w Collin/_paper/results/performance_differences_draft.log", replace
+log using "${main_loc}/_paper/results/performance_differences_draft.log", replace
 
 **bring in (admin), endline & baseline surveys
 ***********************************************
 *1) agents survey (endline)
-*use "C:\Users\USER\Dropbox\contracts-w Collin\survey_data_management\Endline Rolling Data\Agent_0110.dta", clear //agents data
-use "/Users/fannan/Dropbox/research_Chiman_Francis/contracts-w Collin/survey_data_management/Endline Rolling Data/Agent_0110.dta", clear
+*use "C:/Users/USER/Dropbox/contracts-w Collin/survey_data_management/Endline Rolling Data/Agent_0110.dta", clear //agents data
+use "${main_loc}/survey_data_management/Endline Rolling Data/Agent_0110.dta", clear
 drop caseid
 rename id_key caseid
 destring caseid, replace
-*merge 1:1 caseid using "C:\Users\USER\Dropbox\contracts-w Collin\instruments\endline\Sample_endline\agents_detailswdropout.dta", keepusing(dropout_status) gen(_mergedropout) force
-*save "C:\Users\USER\Dropbox\contracts-w Collin\instruments\endline\Sample_endline\optn3_sample_2574_wdropout.dta", replace
+// save "${main_loc}/instruments/endline/Sample_endline/optn3_sample_2574_wdropout.dta", replace
 
 *2) agents survey (baseline)
-*merge m:1 caseid using "C:\Users\USER\Dropbox\contracts-w Collin\instruments\endline\Sample_endline\optn3_sample_2574_wdropout.dta", gen(_mergeendline) 
-merge m:1 caseid using "/Users/fannan/Dropbox/research_Chiman_Francis/contracts-w Collin/instruments/endline/Sample_endline/optn3_sample_2574_wdropout.dta", gen(_mergeendline) 
+merge m:1 caseid using "${main_loc}/instruments/endline/Sample_endline/optn3_sample_2574_wdropout.dta", gen(_mergeendline) 
 keep if _mergeendline==3
 
 *Restructuring dropout vars
@@ -320,7 +318,7 @@ replace contracts =4 if treatment_contract=="Threshold"
 replace contracts =5 if treatment_contract=="Tournament"
 
 
-saveold "/Users/fannan/Dropbox/research_Chiman_Francis/contracts-w Collin/_paper/intermediate_data/data_interpretingresults.dta", replace
+saveold "${main_loc}/_paper/intermediate_data/data_interpretingresults.dta", replace
 
 
 *1) selection out of contracts? no!!
@@ -384,8 +382,8 @@ sum endline_momo_income endline_corecico_revenue endline_nonmomo_income endline_
 **admin data evidence?
 *bring in admin data #2 - Foster MML
 preserve
-use "/Users/fannan/Dropbox/research_Chiman_Francis/contracts-w Collin/survey_data_management/Admin Data Request/Post ISSER Data Request Updated", clear
-	merge m:1 icx using "/Users/fannan/Dropbox/research_Chiman_Francis/contracts-w Collin/survey_data_management/Endline Rolling Data/_intermediate_agent_endldata.dta"
+use "${main_loc}/survey_data_management/Admin Data Request/Post ISSER Data Request Updated", clear
+	merge m:1 icx using "${main_loc}/survey_data_management/Endline Rolling Data/_intermediate_agent_endldata.dta"
 keep if _merge==3
 
 gen cico_value =cash_in_value + cash_out_value
@@ -524,8 +522,8 @@ reg Q1xxz1_7 flatbonus purefranchising threshold tournament i.strata assignedpre
 **admin data evidence -- labor supply responses, dynamics?
 *bring in admin data #3 - Foster MML
 preserve
-use "/Users/fannan/Dropbox/research_Chiman_Francis/contracts-w Collin/survey_data_management/Admin Data Request/2nd update post trial admin data", clear 
-merge m:1 icx using "/Users/fannan/Dropbox/research_Chiman_Francis/contracts-w Collin/survey_data_management/Endline Rolling Data/_intermediate_agent_endldata.dta" 
+use "${main_loc}/survey_data_management/Admin Data Request/2nd update post trial admin data", clear 
+merge m:1 icx using "${main_loc}/survey_data_management/Endline Rolling Data/_intermediate_agent_endldata.dta" 
 keep if _merge==3
 gen double work_starttime = clock(work_start_time, "hms")
 gen double work_endtime   = clock(work_end_time, "hms")
@@ -639,11 +637,11 @@ predict res_laboursupply if inrange(weekno, 19, 36), residuals
 gen weekno_durpost=weekno-18 if inrange(weekno, 19, 36)
 
 lgraph res_laboursupply weekno_durpost if inrange(weekno, 19, 36) & treatment_contract=="Simple Linear" | treatment_contract=="Flat bonus/week", by(contracts) xline(12, lp(dash)) legend(on order(1 "Simple Linear" 2 "Flat bonus/week") pos(4) col(1) size(vsmall)) graphregion(color(white)) title("(Residualized) Labor Supply") ytitle("Average: Labor Supply Index (Anderson 2008)" " ") xtitle("Week")
-gr export "/Users/fannan/Dropbox/research_Chiman_Francis/contracts-w Collin/_paper/results/figures/laborsupplysqflat_dynamics_admindata.eps", replace
+gr export "${main_loc}/_paper/results/figures/laborsupplysqflat_dynamics_admindata.eps", replace
 lgraph res_laboursupply weekno_durpost if inrange(weekno, 19, 36) & treatment_contract=="Simple Linear" | treatment_contract=="Tournament", by(contracts) xline(12, lp(dash)) legend(on order(1 "Simple Linear" 2 "Tournament") pos(4) col(1) size(vsmall)) graphregion(color(white)) title("(Residualized) Labor Supply") ytitle("Average: Labor Supply Index (Anderson 2008)" " ") xtitle("Week")
-gr export "/Users/fannan/Dropbox/research_Chiman_Francis/contracts-w Collin/_paper/results/figures/laborsupplysqtour_dynamics_admindata.eps", replace
+gr export "${main_loc}/_paper/results/figures/laborsupplysqtour_dynamics_admindata.eps", replace
 lgraph res_laboursupply weekno_durpost if inrange(weekno, 19, 36) & treatment_contract=="Simple Linear" | treatment_contract=="Tournament" | treatment_contract=="Flat bonus/week", by(contracts) xline(12, lp(dash)) legend(on order(1 "Simple Linear"  2 "Flat bonus/week" 3 "Tournament") pos(4) col(1) size(vsmall)) graphregion(color(white)) title("(Residualized) Labor Supply") ytitle("Average: Labor Supply Index (Anderson 2008)" " ") xtitle("Week")
-gr export "/Users/fannan/Dropbox/research_Chiman_Francis/contracts-w Collin/_paper/results/figures/laborsupplysqflattour_dynamics_admindata.eps", replace
+gr export "${main_loc}/_paper/results/figures/laborsupplysqflattour_dynamics_admindata.eps", replace
 *all graphs
 lgraph res_laboursupply weekno_durpost if inrange(weekno, 19, 36), by(contracts) xline(12, lp(dash)) legend(on order(1 "Simple Linear" 2 "Flat bonus/week" 3 "Franchising" 4 "Threshold" 5 "Tournament") pos(4) col(1) size(vsmall)) graphregion(color(white)) title("(Residualized) Labor Supply") ytitle("Average: Labor Supply Index (Anderson 2008)" " ") xtitle("Week")
 lgraph res_laboursupply weekno if inrange(weekno, 19, 36), by(contracts) xline(31, lp(dash)) legend(on order(1 "Simple Linear" 2 "Flat bonus/week" 3 "Franchising" 4 "Threshold" 5 "Tournament") pos(4) col(1) size(vsmall)) graphregion(color(white)) title("(Residualized) Labor Supply") ytitle("Average: Labor Supply Index (Anderson 2008)" " ") xtitle("Week")
@@ -671,7 +669,7 @@ reg endline_momo_income c.assignedpreferred01##(flatbonus purefranchising thresh
 *admin data evidence? 
 **generally "null", some mixed 
 preserve
-use "/Users/fannan/Dropbox/research_Chiman_Francis/contracts-w Collin/_paper/intermediate_data/data_treatmenteffects_main.dta", clear
+use "${main_loc}/_paper/intermediate_data/data_treatmenteffects_main.dta", clear
 *interpreting rsults: 3) selection into contracts? 
 *admin data evidence? generally "null"
 *implement it there too...
@@ -766,8 +764,8 @@ reg NS4a flatbonus purefranchising threshold tournament i.strata baseline_coreci
 **bring in Audit study data
 *key result (positive story) - limited price & no price changes; if anything, better for non-sq schemes
 ********************************************************************************************************
-*use "C:\Users\USER\Dropbox\contracts-w Collin\survey_data_management\Field data\Audit Daily Data\final_data_2725.dta", clear 
-use "/Users/fannan/Dropbox/research_Chiman_Francis/contracts-w Collin/survey_data_management/Field data/Audit Daily Data/final_data_2725.dta", clear
+*use "C:/Users/USER/Dropbox/contracts-w Collin/survey_data_management/Field data/Audit Daily Data/final_data_2725.dta", clear 
+use "${main_loc}/survey_data_management/Field data/Audit Daily Data/final_data_2725.dta", clear
 
 *@Beatrice - help merge w/ baseline survey to control for usual agent characteristics?
 
@@ -874,7 +872,7 @@ reg discussedfees01 trt1 trt2 trt4 trt5 i.strata i.sa_q2 i.typeid i.enum if stay
 **subjectively elicited WTA: wta_ghs to rejoin same -- all agents decomposed by contracts?
 *bring in data_interpretingresults (from hetero analysis above?)
 ***********************
-use "/Users/fannan/Dropbox/research_Chiman_Francis/contracts-w Collin/_paper/intermediate_data/data_interpretingresults.dta", clear
+use "${main_loc}/_paper/intermediate_data/data_interpretingresults.dta", clear
 tab N3
 gen rejoinYEs=(N3==1) if !missing(N3)
 tab N4
@@ -893,7 +891,7 @@ eststo WTA_Simplelinear: mean N4_w if treatment_contract=="Simple Linear"
 eststo WTA_Threshold: mean N4_w if treatment_contract=="Threshold"
 eststo WTA_Tournament: mean N4_w if treatment_contract=="Tournament"
 coefplot WTA_Simplelinear WTA_Flatbonus WTA_Franchising WTA_Threshold WTA_Tournament, vertical xlabel("") xtitle("") ytitle("Average: Amount reported (GHS)" " ") title("Min. WTA to Rejoin Same Contract Post-Experiment") recast(bar) barwidth(0.15) fcolor(*.5) ciopts(recast(rcap)) citop citype(normal) level(90) graphregion(color(white)) legend(pos(4) col(1) size(small) region(col(white))) ylab(, nogrid)
-gr export "/Users/fannan/Dropbox/research_Chiman_Francis/contracts-w Collin/_paper/results/figures/min_wta_amount_avg.eps", replace
+gr export "${main_loc}/_paper/results/figures/min_wta_amount_avg.eps", replace
 
 
 **tbd (changes to most preferred as agent?): what of Q1PA=q2 this too?
@@ -907,8 +905,8 @@ log close
 **try a simple labor supply model, e**
 **https://law.yale.edu/sites/default/files/area/center/corporate/spring2022_paper_marinescuioana_2-17-22.pdf
 **https://docs.iza.org/dp16393.pdf 
-use "/Users/fannan/Dropbox/research_Chiman_Francis/contracts-w Collin/_paper/intermediate_data/data_treatmenteffects_main.dta", clear
-merge m:1 icx using "/Users/fannan/Dropbox/research_Chiman_Francis/contracts-w Collin/_paper/intermediate_data/data_interpretingresults.dta", force gen(_merge_expervendline)
+use "${main_loc}/_paper/intermediate_data/data_treatmenteffects_main.dta", clear
+merge m:1 icx using "${main_loc}/_paper/intermediate_data/data_interpretingresults.dta", force gen(_merge_expervendline)
 
 **laborsupply?
 	*ssc install swindex
