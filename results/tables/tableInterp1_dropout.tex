@@ -1,0 +1,23 @@
+{
+\def\sym#1{\ifmmode^{#1}\else\(^{#1}\)\fi}
+\begin{tabular}{l*{4}{c}}
+\hline\hline
+                                                  &\multicolumn{1}{c}{(1)}&\multicolumn{1}{c}{(2)}&\multicolumn{1}{c}{(3)}&\multicolumn{1}{c}{(4)}\\
+                                                  &\multicolumn{1}{c}{Total Revenue/day}&\multicolumn{1}{c}{CICO Value/day}&\multicolumn{1}{c}{Airtime Value/day}&\multicolumn{1}{c}{Output Index}\\
+                                                  &        b/se         &        b/se         &        b/se         &        b/se         \\
+\hline
+treatment\_contract==Flat bonus/week               &      -9.907         &   -3278.185         &      -5.643         &      -0.124         \\
+                                                  &     (8.509)         &  (3498.853)         &    (22.036)         &     (0.128)         \\
+treatment\_contract==Pure Franchising              &      -7.451         &   -2002.231         &      22.286         &      -0.068         \\
+                                                  &     (7.313)         &  (3170.998)         &    (24.269)         &     (0.112)         \\
+treatment\_contract==Threshold                     &     -13.289\sym{**} &   -5783.430\sym{**} &      -6.879         &      -0.183\sym{*}  \\
+                                                  &     (6.730)         &  (2740.793)         &    (21.747)         &     (0.105)         \\
+treatment\_contract==Tournament                    &      -9.245         &   -3719.458         &      17.015         &      -0.052         \\
+                                                  &     (7.531)         &  (3085.655)         &    (23.493)         &     (0.117)         \\
+\hline
+Observations                                      &       50523         &       46789         &       30899         &       50523         \\
+Mean of dependent variable                        &      80.069         &  28,072.969         &     138.614         &       0.277         \\
+SD of dependent variable                          &      69.663         &  27,901.227         &     167.447         &       1.079         \\
+\hline\hline
+\end{tabular}
+}

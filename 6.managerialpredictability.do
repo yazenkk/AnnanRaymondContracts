@@ -14,7 +14,7 @@
 
 *(B) results - managerial predictability and drivers*
 clear all
-log using "${main_loc}/_paper/results/managerial_predictability_draft.log", replace
+cap log using "${main_loc}/_paper/results/managerial_predictability_draft.log", replace
 *start w/ baseline survey - managers
 use "${main_loc}/survey_data_management/Field data/Manager/Manager.dta", clear //n=456
 gen rct_sample = (s1_1a==1 | s1_1a==2 | s1_1a==3 | s1_1a==9 | s1_1a==5 | s1_1a==6 | s1_1a==7 | s1_1a==14 | s1_1a==15) // 9 regions, n=378
@@ -163,7 +163,7 @@ hist res_rank_diff_predict_rct, caption(sd = `sd', position(12) ring(0))
 */
 restore
 
-	
+
 *bring in endline preferences, can only do n=279! tracked overtime? 
 *but +43 new mangers @endline*
 preserve
@@ -219,6 +219,7 @@ gen reciprocal2=(RE2>=7) if !missing(RE2) //median (relative)
 tab QN6
 gen understand=(QN6==1) if !missing(QN6)
 gen dontunderstand=(QN6==2) if !missing(QN6)
+eststo clear
 eststo Understand: mean understand
 eststo Dont: mean dontunderstand
 coefplot Understand Dont, vertical xlabel("") xtitle("") ytitle("Fraction: Managers" " ", size(medium)) title("Managers - Understand Different Contracts at Endline") recast(bar) barwidth(0.90) fcolor(*.5) ciopts(recast(rcap)) citop citype(normal) level(95) graphregion(color(white)) ylab(, nogrid) legend(pos(4) col(1) region(col(white)) size(small)) ylab(, nogrid)
@@ -267,18 +268,24 @@ label var res_rank_diff_predict_rct "rank difference between predictions and act
 
 *drivers of predictability?
 *two-way clustering: by manager & by enumerator
-***col3 (a) \& (b)**
-reghdfe rank_diff_predict_rct i.contract_id i.manager_type_r i.freq_interactwAgents i.familiar_motivatingAgents i.q3 ///
+***col3 (a) \& (b)** col 1 (slides)
+eststo clear
+eststo: reghdfe rank_diff_predict_rct i.contract_id i.manager_type_r i.freq_interactwAgents i.familiar_motivatingAgents i.q3 ///
 	experience_yr experience_sales_yr i.know_currentscheme ///
 	i.bonus_linked_Agentperform people_managing i.busymarket_managing i.educ i.married i.female hhsize, noabsorb vce(cluster id eid)
-
-reghdfe rank_diff_predict_rct i.contract_id i.manager_type_r i.freq_interactwAgents i.familiar_motivatingAgents i.q3 ///
+estadd local behavioral_traits "No"
+estadd local market_vol "No"
+	
+** col 2 (slides)
+eststo: reghdfe rank_diff_predict_rct i.contract_id i.manager_type_r i.freq_interactwAgents i.familiar_motivatingAgents i.q3 ///
 	experience_yr experience_sales_yr i.know_currentscheme ///
 	i.bonus_linked_Agentperform people_managing i.busymarket_managing  i.volatileMarket i.educ i.married i.female hhsize ///
 	i.riskaverse1 i.impatient1 i.competeaverse1 i.reciprocal1, noabsorb vce(cluster id eid)
 	*result:
 	**weak predictability for contract=3/franch and =5/tourn relative to sq
 	**what matters 4: hq manager level (hierarchy), interact w/ agents, bonuses linked & educ level
+estadd local behavioral_traits "Yes"
+estadd local market_vol "Yes"
 
 *calc accuracy: overall (rank) correl. & r^2
 **col4**
@@ -304,7 +311,6 @@ restore
 
 *do for: dropout_rank (dropouts), only n=279!
 *********************************
-preserve
 keep if  _merge==3
 gen id_drop = _n
 reshape long q2r_ dropout_rank, i(id_drop) j(contract_id) //not: contract_id: 1=sq, 2=flat, 3=threshold, 4=franchising, 5=tournament
@@ -335,6 +341,7 @@ reghdfe rank_diff_predict_rct i.contract_id i.manager_type_r i.freq_interactwAge
 	experience_yr experience_sales_yr i.know_currentscheme ///
 	i.bonus_linked_Agentperform people_managing i.busymarket_managing i.educ i.married i.female hhsize, noabsorb vce(cluster id_drop eid)
 
+** col 2 (slides)
 reghdfe rank_diff_predict_rct i.contract_id i.manager_type_r i.freq_interactwAgents i.familiar_motivatingAgents i.q3 ///
 	experience_yr experience_sales_yr i.know_currentscheme ///
 	i.bonus_linked_Agentperform people_managing i.busymarket_managing  i.volatileMarket i.educ i.married i.female hhsize ///
@@ -356,19 +363,24 @@ reghdfe q2r_ rctr_ i.contract_id i.manager_type_r i.freq_interactwAgents i.famil
 */
 
 *dropout=pc
-**col7 (a) \& (b)**
-reghdfe rank_diff_predict_rct_drop i.contract_id i.manager_type_r i.freq_interactwAgents i.familiar_motivatingAgents i.q3 ///
+**col7 (a) \& (b)** col 3 (slides)
+eststo: reghdfe rank_diff_predict_rct_drop i.contract_id i.manager_type_r i.freq_interactwAgents i.familiar_motivatingAgents i.q3 ///
 	experience_yr experience_sales_yr i.know_currentscheme ///
 	i.bonus_linked_Agentperform people_managing i.busymarket_managing i.educ i.married i.female hhsize, noabsorb vce(cluster id_drop eid)
+estadd local behavioral_traits "No"
+estadd local market_vol "No"
 
-reghdfe rank_diff_predict_rct_drop i.contract_id i.manager_type_r i.freq_interactwAgents i.familiar_motivatingAgents i.q3 ///
+** col 4 (slides)
+eststo: reghdfe rank_diff_predict_rct_drop i.contract_id i.manager_type_r i.freq_interactwAgents i.familiar_motivatingAgents i.q3 ///
 	experience_yr experience_sales_yr i.know_currentscheme ///
 	i.bonus_linked_Agentperform people_managing i.busymarket_managing  i.volatileMarket i.educ i.married i.female hhsize ///
 	i.riskaverse1 i.impatient1 i.competeaverse1 i.reciprocal1, noabsorb vce(cluster id_drop eid)
 	*result:
 	**weak predictability for contract=3/franch and =5/tourn relative to sq
 	**what matters 4: hq manager level (hierarchy), interact w/ agents, bonuses linked & educ level
-
+estadd local behavioral_traits "Yes"
+estadd local market_vol "Yes"
+	
 *calc accuracy: overall (rank) correl. & r^2
 **col9**
 reghdfe rctr_drop_ dropout_rank, noabsorb vce(cluster id_drop eid) //report
@@ -383,7 +395,68 @@ reghdfe dropout_rank rctr_drop_ i.contract_id i.manager_type_r i.freq_interactwA
 	i.bonus_linked_Agentperform people_managing i.busymarket_managing i.educ i.married i.female hhsize ///
 	i.riskaverse1 i.impatient1 i.volatileMarket i.competeaverse1 i.reciprocal1, noabsorb vce(cluster id_drop eid)
 */
-restore
+
+label var rank_diff_predict_rct 	 "IC: Prediction Error |Pic − Ac|"
+label var rank_diff_predict_rct_drop "IR: Prediction Error |Pic − Ac|"
+label var contract_id  				 "Contract Type"
+label define contract_id 2 "Contract=Flat Bonus" 4 "Contract=Franchising" 3 "Contract=Threshold" 5 "Contract=Tournament", replace
+label values contract_id contract_id
+
+label var manager_type_r 			 "Manager Hierarchy"
+label define manager_type_r 2 "Mngr=Ambassadors" 3 "Mngr=AADs" 4 "Mngr=TSCs" 5 "Mngr=[label?]" 6 "Mngr=HQ/CEO", replace
+label values manager_type_r manager_type_r
+
+label var freq_interactwAgents 		 "Interaction with Agents"
+label define freq_interactwAgents 2 "Interaction freq=Low" 3 "Interaction freq=Med" 4 "Interaction freq=High", replace
+label values freq_interactwAgents freq_interactwAgents
+
+label var familiar_motivatingAgents
+label var q3 
+label var experience_yr 
+label var experience_sales_yr
+label var know_currentscheme
+label var bonus_linked_Agentperform
+label var people_managing
+label var busymarket_managing
+label var volatileMarket
+label var educ 						 "Education"
+label var married  					 "Married"
+label var female  					 "Female"
+label var hhsize
+label var riskaverse1
+label var impatient1
+label var competeaverse1
+label var reciprocal1
+
+
+** generate table
+forval fold = 1/2 {
+	if `fold' == 1 local save_loc "${results}/tables" // save in two locations
+	if `fold' == 2 local save_loc "${results_db}/tables"
+	
+	esttab using "`save_loc'/tableInterp4_predictability.tex", 	 ///
+		keep(*contract_id *manager_type_r *freq_interactwAgents *educ *married *female) ///
+		style(tex)											///
+		nogaps												///
+		nobaselevels 										///
+		noconstant											///
+		label            									///
+		varwidth(50)										///
+		wrap 												///
+		cells (b(fmt(3) star) se(fmt(3) par)) 				///
+		star(* 0.10 ** 0.05 *** 0.01) 						///
+		stats(N 											///
+			  behavioral_traits 							///
+			  market_vol, 									///
+			  fmt(%9.0f %9.3f %9.3f ) 						///
+			  labels("Observations"					 		///
+					 "Behavioral Traits" 					///
+					 "Market Volatility")) ///
+		replace
+}
+
+
+
 
 	*summary of results-performance=ic?
 	*(1) expectedly - managerial 'hierarchy matters' but unexpectedly - lowerlevel managers (field-based) are less predictive of incentive effects relative to higherlevel managers (hQ-based) - perhaps b/c higherlevel managers were once lowerlever and then got 'promoted' (and so they have more signals/information about both lower- and upper-level incentive decisions and potential agent behaviors)

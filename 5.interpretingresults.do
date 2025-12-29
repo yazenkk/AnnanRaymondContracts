@@ -15,7 +15,7 @@
 
 *(A) results - drivers of performance differences*
 clear all
-log using "${main_loc}/_paper/results/performance_differences_draft.log", replace
+cap log using "${main_loc}/_paper/results/performance_differences_draft.log", replace
 
 **bring in (admin), endline & baseline surveys
 ***********************************************
@@ -147,15 +147,15 @@ replace q2_5_sametournament=0 if q2_5_tournament!=q2_5_1 & !missing(q2_5_tournam
 tab q2_5_sametournament
 tab q2_5_sametournament, m
 
-br q2_1_linear q2_2_flat q2_3_threshold q2_4_franchise q2_5_tournament //newly created ending performance reversed rankings
-br q2_1_linear q2_2_flat q2_3_threshold q2_4_franchise q2_5_tournament q2_1_1 q2_2_1 q2_3_1 q2_4_1 q2_5_1 //both baseline and endline
-br q2_1_linear q2_2_flat q2_3_threshold q2_4_franchise q2_5_tournament q2_1_1 q2_2_1 q2_3_1 q2_4_1 q2_5_1 q2_4_samefranchise //cross-checking for consistency
+// br q2_1_linear q2_2_flat q2_3_threshold q2_4_franchise q2_5_tournament //newly created ending performance reversed rankings
+// br q2_1_linear q2_2_flat q2_3_threshold q2_4_franchise q2_5_tournament q2_1_1 q2_2_1 q2_3_1 q2_4_1 q2_5_1 //both baseline and endline
+// br q2_1_linear q2_2_flat q2_3_threshold q2_4_franchise q2_5_tournament q2_1_1 q2_2_1 q2_3_1 q2_4_1 q2_5_1 q2_4_samefranchise //cross-checking for consistency
 
 gen all_consistentranks = . //checking consistency in all 5 ranks for both baseline and endline
 replace all_consistentranks = 1 if q2_1_linear==q2_1_1 & q2_2_flat==q2_2_1 & q2_3_threshold==q2_3_1 & q2_4_franchise==q2_4_1 & q2_5_tournament==q2_5_1
 replace all_consistentranks = 0 if !missing(q2_1_linear, q2_1_1, q2_2_flat, q2_2_1, q2_3_threshold, q2_3_1, q2_4_franchise, q2_4_1, q2_5_tournament, q2_5_1) & (q2_1_linear!=q2_1_1 | q2_2_flat!=q2_2_1 | q2_3_threshold!=q2_3_1 | q2_4_franchise!=q2_4_1 | q2_5_tournament!=q2_5_1)
 tab all_consistentranks, missing
-br q2_1_linear q2_2_flat q2_3_threshold q2_4_franchise q2_5_tournament q2_1_1 q2_2_1 q2_3_1 q2_4_1 q2_5_1 all_consistentranks
+// br q2_1_linear q2_2_flat q2_3_threshold q2_4_franchise q2_5_tournament q2_1_1 q2_2_1 q2_3_1 q2_4_1 q2_5_1 all_consistentranks
 
 *Reverse dropout rank positions: dropout_rank1 = rrank5, ..., dropout_rank5 = rrank1
 forvalues i = 1/5 {
@@ -341,12 +341,50 @@ tab dropout_status, nolab
  reg endline_nonmtnmomosales c.dropout_status##(flatbonus purefranchising threshold tournament)  i.strata baseline_corecico_revenue, cluster(s1_1cii)
 
 **conditional on dropout sample, any diffs in performance? no //report (2)
-sum endline_momo_income endline_corecico_revenue endline_nonmomo_income endline_nonmomo_sales if dropout_status == 0 & treatment_contract=="Simple Linear"
- reg endline_momo_income flatbonus purefranchising threshold tournament i.strata baseline_momo_income if dropout_status == 0, cluster(s1_1cii)
- reg endline_corecico_revenue flatbonus purefranchising threshold tournament i.strata baseline_corecico_revenue if dropout_status == 0, cluster(s1_1cii) 
- reg endline_nonmomo_income flatbonus purefranchising threshold tournament i.strata baseline_totbusiness_income if dropout_status == 0, cluster(s1_1cii) 
- reg endline_nonmomo_sales flatbonus purefranchising threshold tournament i.strata baseline_nonmomo_sales if dropout_status == 0, cluster(s1_1cii) 
- 
+eststo clear
+clonevar baseline_nonmomo_income = baseline_totbusiness_income // for control in reg
+foreach var in momo_income corecico_revenue nonmomo_income nonmomo_sales {
+	
+	eststo: reg endline_`var' flatbonus purefranchising threshold tournament ///
+		i.strata baseline_`var' ///
+		if dropout_status == 0, cluster(s1_1cii)
+
+	sum endline_`var' if dropout_status == 0 & treatment_contract=="Simple Linear"
+	estadd local mean_depvar = string(`r(mean)', "%15.3fc"), replace
+	estadd local sd_depvar = string(`r(sd)', "%15.3fc"), replace
+}
+label var endline_momo_income 		"Total Revenue/mn"
+label var endline_corecico_revenue 	"CICO Value/mn"
+label var endline_nonmomo_income 	"Other Bus. Income/mn"
+label var endline_nonmomo_sales 	"Other Bus. Sales/mn"
+
+** generate table
+forval fold = 1/2 {
+	if `fold' == 1 local save_loc "${results}/tables" // save in two locations
+	if `fold' == 2 local save_loc "${results_db}/tables"
+	
+	esttab using "`save_loc'/tableInterp2_dropout_endline.tex", ///
+		keep(flatbonus purefranchising threshold tournament) ///
+		style(tex)											///
+		nogaps												///
+		nobaselevels 										///
+		noconstant											///
+		label            									///
+		varwidth(50)										///
+		wrap 												///
+		cells (b(fmt(3) star) se(fmt(3) par)) 				///
+		star(* 0.10 ** 0.05 *** 0.01) 						///
+		stats(N 											///
+			  mean_depvar 									///
+			  sd_depvar, 									///
+			  fmt(%9.0f %9.3f %9.3f ) 						///
+			  labels("Observations"					 		///
+					 "Mean of dependent variable" ///
+					 "SD of dependent variable")) ///
+		replace
+}
+
+
 **dropouts report constant or increase in performance when asked? no // report (3)
 *result -- no differences in (subjective) performance
 tab N2b
@@ -408,13 +446,49 @@ collapse (sum) cico_value cico_volume cico_bonus airtime_value airtime_volume ou
 tab dropout_status
 tab dropout_status, nolab //dropout=0
 
-sum cico_bonus cico_value airtime_value output if inrange(weekno, 19, 30) & dropout_status==0 & treatment_contract=="Simple Linear"
-reg cico_bonus flatbonus purefranchising threshold tournament i.strata if inrange(weekno, 19, 30) & dropout_status==0, cluster(s1_1cii) //during trial period
-reg cico_value flatbonus purefranchising threshold tournament i.strata if inrange(weekno, 19, 30) & dropout_status==0, cluster(s1_1cii) //during trial period
-*reg cico_volume flatbonus purefranchising threshold tournament i.strata if inrange(weekno, 19, 30) & dropout_status==0, cluster(s1_1cii) //during trial period
-reg airtime_value flatbonus purefranchising threshold tournament i.strata if inrange(weekno, 19, 30) & dropout_status==0, cluster(s1_1cii) //during trial period
-*reg airtime_volume flatbonus purefranchising threshold tournament i.strata if inrange(weekno, 19, 30) & dropout_status==0, cluster(s1_1cii) //during trial period
-reg output flatbonus purefranchising threshold tournament i.strata if inrange(weekno, 19, 30) & dropout_status==0, cluster(s1_1cii) //during trial period
+label var cico_bonus "Total Revenue/day"
+label var cico_value "CICO Value/day"
+label var airtime_value "Airtime Value/day"
+label var output "Output Index"
+
+eststo clear
+foreach var in cico_bonus cico_value airtime_value output {
+	
+	eststo: reg `var' flatbonus purefranchising threshold tournament i.strata if inrange(weekno, 19, 30) & dropout_status==0, cluster(s1_1cii) //during trial period
+	
+	sum `var' if inrange(weekno, 19, 30) & dropout_status==0 & treatment_contract=="Simple Linear"
+	estadd local mean_depvar = string(`r(mean)', "%15.3fc"), replace
+	estadd local sd_depvar = string(`r(sd)', "%15.3fc"), replace
+}
+
+** generate table
+forval fold = 1/2 {
+	if `fold' == 1 local save_loc "${results}/tables" // save in two locations
+	if `fold' == 2 local save_loc "${results_db}/tables"
+	
+	esttab using "`save_loc'/tableInterp1_dropout.tex", 	 ///
+		keep(flatbonus purefranchising threshold tournament) ///
+		style(tex)											///
+		nogaps												///
+		nobaselevels 										///
+		noconstant											///
+		label            									///
+		varwidth(50)										///
+		wrap 												///
+		cells (b(fmt(3) star) se(fmt(3) par)) 				///
+		star(* 0.10 ** 0.05 *** 0.01) 						///
+		stats(N 											///
+			  mean_depvar 									///
+			  sd_depvar, 									///
+			  fmt(%9.0f %9.3f %9.3f ) 						///
+			  labels("Observations"					 		///
+					 "Mean of dependent variable" ///
+					 "SD of dependent variable")) ///
+		replace
+}
+
+
+
 restore
 **#####################################**
 
@@ -451,13 +525,42 @@ tab Q2_8 //added another line of business
 **laborsupply?
 	*ssc install swindex
 	swindex Q1x Q1xx Q1xxz1_1, gen(ls) //hrs.day + days.week + open.early
-	sum ls if treatment_contract=="Simple Linear"
 	
 *stage 0: ignore attrition
-reg ls flatbonus purefranchising threshold tournament i.strata , cluster(s1_1cii) 
-reg Q1x flatbonus purefranchising threshold tournament i.strata , cluster(s1_1cii) 
-reg Q1xx flatbonus purefranchising threshold tournament i.strata , cluster(s1_1cii) 
-reg Q1xxz1_1 flatbonus purefranchising threshold tournament i.strata , cluster(s1_1cii) 
+foreach var in ls Q1x Q1xx Q1xxz1_1 {
+	eststo: reg `var' flatbonus purefranchising threshold tournament i.strata , cluster(s1_1cii) 
+	
+	sum `var' if treatment_contract=="Simple Linear"
+	estadd local mean_depvar = string(`r(mean)', "%15.3fc"), replace
+	estadd local sd_depvar = string(`r(sd)', "%15.3fc"), replace
+}
+** generate table
+forval fold = 1/2 {
+	if `fold' == 1 local save_loc "${results}/tables" // save in two locations
+	if `fold' == 2 local save_loc "${results_db}/tables"
+	
+	esttab using "`save_loc'/tableInterp3_laborsupply.tex", ///
+		keep(flatbonus purefranchising threshold tournament) ///
+		style(tex)											///
+		nogaps												///
+		nobaselevels 										///
+		noconstant											///
+		label            									///
+		varwidth(50)										///
+		wrap 												///
+		cells (b(fmt(3) star) se(fmt(3) par)) 				///
+		star(* 0.10 ** 0.05 *** 0.01) 						///
+		stats(N 											///
+			  mean_depvar 									///
+			  sd_depvar, 									///
+			  fmt(%9.0f %9.3f %9.3f ) 						///
+			  labels("Observations"					 		///
+					 "Mean of dependent variable" ///
+					 "SD of dependent variable")) ///
+		replace
+}
+
+e
 **capital/liquidity?
 tab Q1xxz1_3, nolab
 reg Q1xxz1_3 flatbonus purefranchising threshold tournament i.strata , cluster(s1_1cii) 
@@ -466,6 +569,7 @@ reg Q1xxz1_4 flatbonus purefranchising threshold tournament i.strata , cluster(s
 reg Q1xxz1_5 flatbonus purefranchising threshold tournament i.strata , cluster(s1_1cii) 
 reg Q1xxz1_6 flatbonus purefranchising threshold tournament i.strata , cluster(s1_1cii) 
 reg Q1xxz1_7 flatbonus purefranchising threshold tournament i.strata , cluster(s1_1cii) 
+
 
 *stage 1: post double-lasso: (i) improve power + (ii) rct but trt correlated w/ error due to attrition-key feature of our setup
 **laborsupply?
@@ -529,9 +633,9 @@ gen double work_starttime = clock(work_start_time, "hms")
 gen double work_endtime   = clock(work_end_time, "hms")
 format work_starttime work_endtime %tcHH:MM:SS
 gen double work_duration = (work_endtime - work_starttime) / (1000*60*60)
-br work_duration
+// br work_duration
 sum work_duration  
-br starting_balance ending_balance 
+// br starting_balance ending_balance 
 gen start_early = (work_starttime <= clock("08:00:00", "hms"))
 gen close_late    = (work_endtime   >= clock("17:00:00", "hms"))
 label define yesno 0 "No" 1 "Yes"

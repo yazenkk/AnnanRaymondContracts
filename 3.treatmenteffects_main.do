@@ -233,7 +233,7 @@ replace stayed01=0 if dropout01==1
 
 
 *(a) participation?
-sum didntsigncontract01 dropout01 if contracts==1
+eststo clear
 *uncond: baseline y=productivity
 reg didntsigncontract01 flatbonus purefranchising threshold tournament i.strata, cluster(s1_1cii)
 reg daystrialb4dropout flatbonus purefranchising threshold tournament i.strata, cluster(s1_1cii)
@@ -241,17 +241,55 @@ reg dropout01 flatbonus purefranchising threshold tournament i.strata, cluster(s
 *cond: baseline y=productivity (do always!)
 reg didntsigncontract01 flatbonus purefranchising threshold tournament i.strata ghs_total_basel, cluster(s1_1cii)
 reg daystrialb4dropout flatbonus purefranchising threshold tournament i.strata ghs_total_basel, cluster(s1_1cii)
-reg dropout01 flatbonus purefranchising threshold tournament i.strata ghs_total_basel, cluster(s1_1cii) //report
+eststo: reg dropout01 flatbonus purefranchising threshold tournament i.strata ghs_total_basel, cluster(s1_1cii) //report
 
+
+label var dropout01 "Dropout Indicator"
+sum dropout01 if e(sample) == 1 & contracts==1
+estadd local mean_depvar = string(`r(mean)', "%15.3fc"), replace
+estadd local sd_depvar = string(`r(sd)', "%15.3fc"), replace
+
+** generate table
+forval fold = 1/2 {
+	if `fold' == 1 local save_loc "${results}/tables" // save in two locations
+	if `fold' == 2 local save_loc "${results_db}/tables"
+	
+	esttab using "`save_loc'/table1_IR.tex", 			 	 ///
+		keep(flatbonus purefranchising threshold tournament) ///
+		style(tex)											///
+		nogaps												///
+		nobaselevels 										///
+		noconstant											///
+		label            									///
+		varwidth(50)										///
+		wrap 												///
+		cells (b(fmt(3) star) se(fmt(3) par)) 				///
+		star(* 0.10 ** 0.05 *** 0.01) 						///
+		stats(N 											///
+			  mean_depvar 									///
+			  sd_depvar, 									///
+			  fmt(%9.0f %9.3f %9.3f) 						///
+			  labels("Observations"					 		///
+					 "Mean of dependent variable" ///
+					 "SD of dependent variable")) ///
+		replace
+}
 
 
 *(b) performance?
+eststo clear
 **total output ~ total surplus?
 *******************************
-sum ghs_total if contracts==1 //sq control mean
 *stage 0: ignore attrition:
-reg ghs_total flatbonus purefranchising threshold tournament i.strata ghs_total_basel, cluster(s1_1cii)
-reg ghs_total flatbonus purefranchising threshold tournament i.strata ghs_total_basel i.week, cluster(s1_1cii) //doesn't matter
+eststo: reg ghs_total flatbonus purefranchising threshold tournament i.strata ghs_total_basel, cluster(s1_1cii)
+reg ghs_total flatbonus purefranchising threshold tournament i.strata ghs_total_basel i.week, cluster(s1_1cii) 
+
+label var ghs_total "Total Revenue/wk" 
+sum ghs_total if e(sample) == 1 & contracts==1
+estadd local mean_depvar = string(`r(mean)', "%15.3fc"), replace
+estadd local sd_depvar = string(`r(sd)', "%15.3fc"), replace
+
+//doesn't matter
 /*
 **short vs medium run**
 **short: franchising winner
@@ -279,9 +317,13 @@ reg ghs_total flatbonus purefranchising threshold tournament i.strata ghs_total_
 
 **mtn revenues?
 ****************
-sum ghs_mml if contracts==1 //sq control mean
 *stage 0: ignore attrition
-reg ghs_mml flatbonus purefranchising threshold tournament i.strata ghs_mml_basel, cluster(s1_1cii)
+eststo: reg ghs_mml flatbonus purefranchising threshold tournament i.strata ghs_mml_basel, cluster(s1_1cii)
+label var ghs_mml "MTN Revenue/wk"
+sum ghs_mml if e(sample) == 1 & contracts==1
+estadd local mean_depvar = string(`r(mean)', "%15.3fc"), replace
+estadd local sd_depvar = string(`r(sd)', "%15.3fc"), replace
+
 reg ghs_mml flatbonus purefranchising threshold tournament i.strata ghs_mml_basel i.week, cluster(s1_1cii) //doesn't matter
 /*
 **short vs medium run**
@@ -308,9 +350,13 @@ reg ghs_mml flatbonus purefranchising threshold tournament i.strata ghs_mml_base
 
 **agent revenues (earnings)?
 *****************************
-sum ghs_agents if contracts==1 //sq control mean
 *stage 0: ignore attrition
-reg ghs_agents flatbonus purefranchising threshold tournament i.strata ghs_agents_basel, cluster(s1_1cii)
+eststo: reg ghs_agents flatbonus purefranchising threshold tournament i.strata ghs_agents_basel, cluster(s1_1cii)
+label var ghs_agents "Agent Revenue/wk"
+sum ghs_agents if e(sample) == 1 & contracts==1
+estadd local mean_depvar = string(`r(mean)', "%15.3fc"), replace
+estadd local sd_depvar = string(`r(sd)', "%15.3fc"), replace
+
 /*
 **short vs medium run**
 **short: franchising winner
@@ -358,6 +404,32 @@ quietly predict phat_revcostratio_mml
 reg revcostratio_mml flatbonus purefranchising threshold tournament i.strata ghs_agents_basel assignedpreferred01 hhincome_annual capital_momo [pweight = 1/phat_revcostratio_mml], cluster(s1_1cii) //lasso-select
 reg revcostratio_mml flatbonus purefranchising threshold tournament i.strata ghs_agents_basel [pweight = 1/phat_revcostratio_mml], cluster(s1_1cii) //base
 
+
+** generate table
+forval fold = 1/2 {
+	if `fold' == 1 local save_loc "${results}/tables" // save in two locations
+	if `fold' == 2 local save_loc "${results_db}/tables"
+	
+	esttab using "`save_loc'/table2_IC.tex", 			 	 ///
+		keep(flatbonus purefranchising threshold tournament) ///
+		style(tex)											///
+		nogaps												///
+		nobaselevels 										///
+		noconstant											///
+		label            									///
+		varwidth(50)										///
+		wrap 												///
+		cells (b(fmt(3) star) se(fmt(3) par)) 				///
+		star(* 0.10 ** 0.05 *** 0.01) 						///
+		stats(N 											///
+			  mean_depvar 									///
+			  sd_depvar, 									///
+			  fmt(%9.0f %9.3f %9.3f ) ///
+			  labels("Observations"					 		///
+					 "Mean of dependent variable" ///
+					 "SD of dependent variable")) ///
+		replace
+}
 
 
 *(c) ic* = performance*?

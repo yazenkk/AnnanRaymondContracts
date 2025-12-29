@@ -21,7 +21,9 @@ else if c(username) == "yazenkashlan" {
 	global main_loc "/Users/yazenkashlan/CEGA Dropbox/yfkashlan@gmail.com/contracts-w Collin"
 
 	global do_loc "/Users/yazenkashlan/Documents/GitHub/AnnanRaymondContracts"
-	global results "${do_loc}/results"
+	global results "${do_loc}/results" // results on GitHub for change tracking
+	global results_db "${main_loc}/_paper/results"
+	global results_folders "${results}" "${results_db}"
 }
 
 ** programs
@@ -34,6 +36,7 @@ cap log close
 // do "${do_loc}/2.managerbeliefs_preexperiment.do"
 // do "${do_loc}/3.treatmenteffects_main.do"
 // do "${do_loc}/4.treatmenteffects_heterogeneity.do"
-do "${do_loc}/4.treatmenteffects_heterogeneity.do"
+do "${do_loc}/5.interpretingresults.do"
+// do "${do_loc}/6.managerialpredictability.do"
 
 
